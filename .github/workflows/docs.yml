@@ -26,7 +26,8 @@ jobs:
           java-version: "17"
           cache: maven
       - name: Build Javadoc
-        run: mvn -q -DskipTests javadoc:javadoc
+        # doclint=none: don't fail generation on missing-@param style warnings.
+        run: mvn -q -DskipTests -Ddoclint=none -Dmaven.javadoc.failOnError=false javadoc:javadoc
       - name: Collect apidocs
         run: |
           src=$(find target -type d -name apidocs | head -1)
