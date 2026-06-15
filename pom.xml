@@ -11,6 +11,7 @@
 
   <name>Cosmo for Java</name>
   <description>Ergonomic internationalization (i18n) and localization (l10n) for Java — format numbers, currency, dates, times, units, lists and ICU MessageFormat plurals for any locale, built on ICU4J and Unicode CLDR. No bundled locale data.</description>
+  <url>https://cosmo.miloun.com/</url>
   <licenses>
     <license>
       <name>MIT</name>
