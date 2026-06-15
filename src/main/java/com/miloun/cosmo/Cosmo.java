@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 /**
@@ -768,7 +769,7 @@ public final class Cosmo {
 
     /** A new list sorted by the locale's collation rules. */
     public List<String> sort(Collection<String> items) {
-        return sort(items, null);
+        return sort(items, (Map<String, Object>) null);
     }
 
     /** A new sorted list with optional collation tailoring (see {@link #compare(String, String, Map)}). */
@@ -777,6 +778,25 @@ public final class Cosmo {
         applyCollationOptions(collator, options);
         List<String> out = new ArrayList<>(items);
         out.sort(collator);
+        return out;
+    }
+
+    /**
+     * Sort a collection of arbitrary objects by a string key, using the locale's
+     * collation rules. Mirrors PHP's {@code sort($items, $key)} overload.
+     *
+     * @param key extracts the string to sort each item by.
+     */
+    public <T> List<T> sort(Collection<T> items, Function<T, String> key) {
+        return sort(items, key, null);
+    }
+
+    /** Sort by key with optional collation tailoring (see {@link #compare(String, String, Map)}). */
+    public <T> List<T> sort(Collection<T> items, Function<T, String> key, Map<String, Object> options) {
+        Collator collator = Collator.getInstance(uloc);
+        applyCollationOptions(collator, options);
+        List<T> out = new ArrayList<>(items);
+        out.sort((a, b) -> collator.compare(key.apply(a), key.apply(b)));
         return out;
     }
 
@@ -800,17 +820,32 @@ public final class Cosmo {
         if (needle.isEmpty()) {
             return true;
         }
-        int strength;
+        Collator collator = Collator.getInstance(uloc);
+        // Set strength before applying user options so that caseFirst/numeric
+        // tailoring from options is always applied on top of the sensitivity baseline.
         switch (sensitivity) {
-            case "base": strength = Collator.PRIMARY; break;
-            case "accent": strength = Collator.SECONDARY; break;
-            case "case": strength = Collator.TERTIARY; break;
-            case "variant": strength = Collator.IDENTICAL; break;
+            case "base":
+                collator.setStrength(Collator.PRIMARY);
+                break;
+            case "accent":
+                collator.setStrength(Collator.SECONDARY);
+                break;
+            case "case":
+                // Distinguish case but not accents: PRIMARY strength so "à" = "a",
+                // plus case level so "a" ≠ "A". Mirrors PHP's Collator::PRIMARY +
+                // CASE_LEVEL ON, and matches the JS Intl.Collator "case" definition.
+                collator.setStrength(Collator.PRIMARY);
+                ((RuleBasedCollator) collator).setCaseLevel(true);
+                break;
+            case "variant":
+                // All differences matter: base, accents, case. TERTIARY matches PHP
+                // and the JS Intl definition; IDENTICAL would additionally reject
+                // strings that differ only in Unicode normalisation form.
+                collator.setStrength(Collator.TERTIARY);
+                break;
             default:
                 throw new InvalidArgumentException("\"" + sensitivity + "\" is not a valid sensitivity.");
         }
-        Collator collator = Collator.getInstance(uloc);
-        collator.setStrength(strength);
         applyCollationOptions(collator, options);
         List<String> hay = graphemes(haystack);
         int needLen = graphemes(needle).size();
