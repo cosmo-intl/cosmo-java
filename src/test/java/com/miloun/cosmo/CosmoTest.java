@@ -106,6 +106,18 @@ class CosmoTest {
     }
 
     @Test
+    void precision() {
+        assertEquals("1.00", new Cosmo("en").precision(1)); // fractionDigits defaults to 2
+        assertEquals("1.00", new Cosmo("en").precision(1, 2));
+        assertEquals("1.00", new Cosmo("en").precision(1.002, 2));
+        assertEquals("1.50", new Cosmo("en").precision(1.5, 2));
+        assertEquals("1,234.50", new Cosmo("en").precision(1234.5, 2));
+        assertEquals("1,50", new Cosmo("de").precision(1.5, 2));
+        // options widen the band: at least 1, at most 3 fraction digits.
+        assertEquals("1.2", new Cosmo("en").precision(1.2, 1, opts("maximumFractionDigits", 3)));
+    }
+
+    @Test
     void money() {
         assertEquals("$1,234.50", new Cosmo("en_AU").money(1234.5));
         assertEquals("€1,234.50", new Cosmo("en_US").money(1234.5, "EUR"));

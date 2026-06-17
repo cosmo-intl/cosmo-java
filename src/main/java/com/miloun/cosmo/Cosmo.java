@@ -437,6 +437,31 @@ public final class Cosmo {
         return fmt.format(value);
     }
 
+    /** Format a number with exactly 2 fraction digits ({@code 1} → {@code "1.00"}). */
+    public String precision(double value) {
+        return precision(value, 2, null);
+    }
+
+    /** Format a number with exactly {@code fractionDigits} fraction digits ({@code 1} → {@code "1.00"}). */
+    public String precision(double value, int fractionDigits) {
+        return precision(value, fractionDigits, null);
+    }
+
+    /**
+     * Format a number with a fixed number of fraction digits — always exactly
+     * {@code fractionDigits}, padding with trailing zeros and rounding as needed —
+     * then apply the options bag (see {@link #number(double, Map)}, e.g.
+     * {@code maximumFractionDigits} to widen the band). {@code 1} → {@code "1.00"},
+     * {@code 1.002} → {@code "1.00"}, never {@code "1.0"}.
+     */
+    public String precision(double value, int fractionDigits, Map<String, Object> options) {
+        NumberFormat fmt = NumberFormat.getInstance(uloc);
+        fmt.setMinimumFractionDigits(fractionDigits);
+        fmt.setMaximumFractionDigits(fractionDigits);
+        applyNumberOptions(fmt, options);
+        return fmt.format(value);
+    }
+
     /** Format a fraction as a percentage ({@code 0.2} → {@code "20%"}). */
     public String percentage(double value) {
         return percentage(value, 3, null);
